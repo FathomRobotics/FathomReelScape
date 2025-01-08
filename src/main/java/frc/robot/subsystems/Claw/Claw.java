@@ -9,11 +9,13 @@ import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.util.WantedGamepiece;
 
 
 public class Claw extends SubsystemBase{
 
     public ClawStates currentState = ClawStates.Intaking;
+    public WantedGamepiece wantedGamepiece = WantedGamepiece.Coral;
 
     private SparkMax LeftClawNeo = new SparkMax(ClawConfig.LeftClawNeoId, MotorType.kBrushless);
     private SparkMax RightClawNeo = new SparkMax(ClawConfig.RightClawNeoId, MotorType.kBrushless);
@@ -32,13 +34,28 @@ public class Claw extends SubsystemBase{
     
     public Claw(){
         this.LeftClawConfig.inverted(true);
+        CoralIntake();
     }
 
     @Override
     public void periodic() {
         if(limitSwitch.get() && this.currentState != ClawStates.Outtake){
             this.currentState = ClawStates.Intoke;
+        }else{
+            switch (wantedGamepiece) {
+                case Coral:
+                    CoralIntake();
+                    break;
+                case Algae:
+                    AlgaeIntake();
+    
+                default:
+                    
+                    break;
+            }
         }
+        
+       
         switch (currentState) {
             case Intaking:
                 this.LeftClawNeo.set(1);
