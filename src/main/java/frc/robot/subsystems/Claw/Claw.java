@@ -15,7 +15,7 @@ import frc.robot.util.WantedGamepiece;
 public class Claw extends SubsystemBase{
 
     public ClawStates currentState = ClawStates.Intaking;
-    public WantedGamepiece wantedGamepiece = WantedGamepiece.Coral;
+    private WantedGamepiece wantedGamepiece = WantedGamepiece.Coral;
 
     private SparkMax LeftClawNeo = new SparkMax(ClawConfig.LeftClawNeoId, MotorType.kBrushless);
     private SparkMax RightClawNeo = new SparkMax(ClawConfig.RightClawNeoId, MotorType.kBrushless);
@@ -62,8 +62,8 @@ public class Claw extends SubsystemBase{
                 this.RightClawNeo.set(1);
                 break;
             case Intoke:
-                this.LeftClawNeo.set(0.3);
-                this.RightClawNeo.set(0.3);
+                this.LeftClawNeo.set(0.1);
+                this.RightClawNeo.set(0.1);
                 break;
 
             case Outtake:
@@ -80,16 +80,16 @@ public class Claw extends SubsystemBase{
     }
   
     public void CoralIntake(){
-        this.leftFrontSolenoid.set(Value.kReverse);
-        this.rightFrontSolenoid.set(Value.kReverse);
+        this.leftFrontSolenoid.set(Value.kForward);
+        this.rightFrontSolenoid.set(Value.kForward);
 
         this.leftBackSolenoid.set(Value.kForward);
         this.rightBackSolenoid.set(Value.kForward);
     }
 
     public void AlgaeIntake(){
-        this.leftFrontSolenoid.set(Value.kForward);
-        this.rightFrontSolenoid.set(Value.kForward);
+        this.leftFrontSolenoid.set(Value.kReverse);
+        this.rightFrontSolenoid.set(Value.kReverse);
 
         this.leftBackSolenoid.set(Value.kReverse);
         this.rightBackSolenoid.set(Value.kReverse);
@@ -97,5 +97,9 @@ public class Claw extends SubsystemBase{
 
     public boolean getLimitSwitchBroken(){
         return this.limitSwitch.get();
+    }
+
+    public void setWantedGamePiece(WantedGamepiece pGamepiece){
+        this.wantedGamepiece = pGamepiece;
     }
 }
