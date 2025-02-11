@@ -1,59 +1,69 @@
 package frc.robot.subsystems.ElevatorPivot;
 
-import static edu.wpi.first.units.Units.Volt;
-import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.LastKnownPositions;
 
 public class ElevatorPivot extends SubsystemBase {
     private TalonFX pivotMotorA = new TalonFX(ElevatorPivotConfig.pivotMotorA);
     private TalonFX pivotMotorB = new TalonFX(ElevatorPivotConfig.pivotMotorB);
+
     private final VoltageOut m_sysIdControl = new VoltageOut(0);
+    
+    private final PositionVoltage positionControl = new PositionVoltage(LastKnownPositions.ElevatorPivotLastKnownPose).withSlot(1);
+   
+
 
     private TalonFXConfiguration cfg = new TalonFXConfiguration();
 
-    private final MotionMagicVoltage motionMagicVoltage = new MotionMagicVoltage(0);
-
-    private final SysIdRoutine m_sysIdRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,         // Use default ramp rate (1 V/s)
-                Volt.of(4), // Reduce dynamic voltage to 4 to prevent brownout
-                null,          // Use default timeout (10 s)
-                                       // Log state with Phoenix SignalLogger class
-                state -> SignalLogger.writeString("state", state.toString())
-            ),
-            new SysIdRoutine.Mechanism(
-                volts -> powerMotors(volts),
-                null,
-                this
-            )
-        );
+    
+   
 
     public ElevatorPivot(){
         FeedbackConfigs fdb = cfg.Feedback;
         fdb.SensorToMechanismRatio = ElevatorPivotConfig.motorToDiamter;
-        MotionMagicConfigs mm  = cfg.MotionMagic;
+
+        
+        cfg.Slot0.kP = 0.001; // An error of 1 rotation results in 2.4 V output
+        cfg.Slot0.kI = 0; // No output for integrated error
+        cfg.Slot0.kD = 0;
+         StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = pivotMotorA.getConfigurator().apply(cfg);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.out.println("Could not apply configs, error code: " + status.toString());
+        }
+    
             
     }
 
-    public Command elevatorPivotSysIdQuasistatic(SysIdRoutine.Direction direction){
-        return m_sysIdRoutine.quasistatic(direction);
-    }
-    public Command elevatorPivotSysIdDynamic(SysIdRoutine.Direction direction){
-        return m_sysIdRoutine.dynamic(direction);
+    public void setPoseRequest(double pose){
+        LastKnownPositions.ElevatorPivotLastKnownPose = pose;
+        pivotMotorA.setControl(this.positionControl.withPosition(pose));
+        pivotMotorB.setControl(new Follower(ElevatorPivotConfig.pivotMotorA, false));
     }
 
+    public boolean atRequestedPose(){
+        return Math.abs(this.pivotMotorA.getPosition().getValueAsDouble() - LastKnownPositions.ElevatorPivotLastKnownPose) < 0.05; 
+
+    }
+
+    public Command ElevatorPivotPoseCommand(double pose){
+        return runOnce(
+           () -> setPoseRequest(pose)
+        );
+    }
     public void powerMotors(Voltage volts){
         pivotMotorA.setControl(m_sysIdControl.withOutput(volts));
         pivotMotorB.setControl(new Follower(ElevatorPivotConfig.pivotMotorA, false));

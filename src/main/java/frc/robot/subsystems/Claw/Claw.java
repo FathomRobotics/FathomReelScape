@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.WantedGamepiece;
 
@@ -97,6 +98,10 @@ public class Claw extends SubsystemBase{
 
     public boolean getLimitSwitchBroken(){
         return this.limitSwitch.get();
+    }
+
+    public Command setClawPiece(WantedGamepiece pGamepiece){
+        return runOnce( () -> setWantedGamePiece(pGamepiece));
     }
 
     public void setWantedGamePiece(WantedGamepiece pGamepiece){
