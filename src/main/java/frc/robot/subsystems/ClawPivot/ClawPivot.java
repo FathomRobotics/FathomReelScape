@@ -10,7 +10,9 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.LastKnownPositions;
 
 public class ClawPivot extends SubsystemBase {
     private SparkMax pivotMotor = new SparkMax(ClawPivotConfig.ClawPivotMotorID,MotorType.kBrushless);
@@ -18,6 +20,8 @@ public class ClawPivot extends SubsystemBase {
     private SparkMaxConfig pivotMotorConfig;
 
     private ClawPivotStates currentState = ClawPivotStates.StartPose;
+
+    
 
     public ClawPivot(){
         closedLoopController = pivotMotor.getClosedLoopController();
@@ -54,6 +58,14 @@ public class ClawPivot extends SubsystemBase {
 
     public void changeState(ClawPivotStates newStates){
         this.currentState = newStates;
+
+    }
+
+    public Command changeStateCommand(ClawPivotStates newState){
+        return runOnce( () -> changeState(newState));
+    }
+    public boolean isAtPose(){ 
+        return Math.abs(this.pivotMotor.getAbsoluteEncoder().getPosition() - LastKnownPositions.WristLastKnownPose) < 0.05;
     }
 
     @Override
