@@ -13,11 +13,17 @@ public class AutoRoutines {
 
     public AutoRoutine simplePathAuto() {
         final AutoRoutine routine = m_factory.newRoutine("SimplePath Auto");
-        final AutoTrajectory simplePath = routine.trajectory("SimplePath");
-
+        final AutoTrajectory preload = routine.trajectory("PreLoadTopJ");
+        final AutoTrajectory getFromstation = routine.trajectory("JToTop");
+        final AutoTrajectory scoreFromStation = routine.trajectory("TopToA");
+        
         routine.active().onTrue(
-            simplePath.resetOdometry()
-                .andThen(simplePath.cmd())
+            preload.resetOdometry()
+                .andThen(preload.cmd()).andThen(
+                    getFromstation.cmd()
+                ).andThen(
+                    scoreFromStation.cmd()
+                )
         );
         return routine;
     }
