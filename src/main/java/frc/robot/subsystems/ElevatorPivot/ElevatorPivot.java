@@ -59,9 +59,9 @@ public class ElevatorPivot extends SubsystemBase {
 
     }
 
-    public Command ElevatorPivotPoseCommand(double pose){
+    public Command ElevatorPivotPoseCommand(ElevatorPivotPoseRequest pose){
         return runOnce(
-           () -> setPoseRequest(pose)
+           () -> setPoseRequest(pose.getValue())
         );
     }
     public void powerMotors(Voltage volts){
