@@ -23,7 +23,9 @@ public class ClawPivot extends SubsystemBase {
     public ClawPivot(){
         closedLoopController = pivotMotor.getClosedLoopController();
         pivotMotorConfig = new SparkMaxConfig();
-
+        
+        pivotMotorConfig.smartCurrentLimit(40);
+        
         pivotMotorConfig.encoder
         .positionConversionFactor(2 * Math.PI)
         .velocityConversionFactor(1);
