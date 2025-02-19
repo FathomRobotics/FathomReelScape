@@ -12,7 +12,6 @@ import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.LastKnownPositions;
 
 public class ClawPivot extends SubsystemBase {
     private SparkMax pivotMotor = new SparkMax(ClawPivotConfig.ClawPivotMotorID,MotorType.kBrushless);
@@ -21,34 +20,22 @@ public class ClawPivot extends SubsystemBase {
 
     private ClawPivotStates currentState = ClawPivotStates.StartPose;
 
-    
-
     public ClawPivot(){
         closedLoopController = pivotMotor.getClosedLoopController();
         pivotMotorConfig = new SparkMaxConfig();
 
         pivotMotorConfig.encoder
-        .positionConversionFactor(1)
+        .positionConversionFactor(2 * Math.PI)
         .velocityConversionFactor(1);
 
-    /*
-     * Configure the closed loop controller. We want to make sure we set the
-     * feedback sensor as the primary encoder.
-     */
         pivotMotorConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-            // Set PID values for position control. We don't need to pass a closed loop
-            // slot, as it will default to slot 0.
-            .p(0.1)
-            .i(0)
-            .d(0)
             .outputRange(-1, 1)
-            // Set PID values for velocity control in slot 1
-            .p(0.0001, ClosedLoopSlot.kSlot1)
-            .i(0, ClosedLoopSlot.kSlot1)
-            .d(0, ClosedLoopSlot.kSlot1)
-            .velocityFF(1.0 / 5767, ClosedLoopSlot.kSlot1)
-            .outputRange(-1, 1, ClosedLoopSlot.kSlot1);
+           
+            .p(0.0001)
+            .i(0)
+            .d(0);
+
         pivotMotor.configure(pivotMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
     }
 
@@ -61,17 +48,21 @@ public class ClawPivot extends SubsystemBase {
 
     }
 
+    public void setRawPower(double power){
+        this.pivotMotor.set(power);
+    }
+
     public Command changeStateCommand(ClawPivotStates newState){
         return runOnce( () -> changeState(newState));
     }
     public boolean isAtPose(){ 
-        return Math.abs(this.pivotMotor.getAbsoluteEncoder().getPosition() - LastKnownPositions.WristLastKnownPose) < 0.05;
+        return Math.abs(this.pivotMotor.getAbsoluteEncoder().getPosition() - this.currentState.getValue()) < 0.05;
     }
 
     @Override
     public void periodic() {
         updatePivotPose(this.currentState.getValue());
-        
+    
         super.periodic();
     }
     
