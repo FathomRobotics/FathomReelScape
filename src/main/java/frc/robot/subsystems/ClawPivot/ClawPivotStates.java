@@ -3,6 +3,7 @@ package frc.robot.subsystems.ClawPivot;
 public enum ClawPivotStates {
     StartPose(0),
     GroundIntake(0),
+    Stow(0),
     LOne(0),
     LTwo(0),
     LThree(0),
