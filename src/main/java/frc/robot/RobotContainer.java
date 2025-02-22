@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+
 import choreo.auto.AutoChooser;
 import choreo.auto.AutoFactory;
 
@@ -48,12 +49,14 @@ public class RobotContainer {
     private final AutoRoutines autoRoutines;
     private final AutoChooser autoChooser = new AutoChooser();
 
+    
+
   public RobotContainer() {
         autoFactory = drivetrain.createAutoFactory();
         autoRoutines = new AutoRoutines(autoFactory);
-
+        
         autoChooser.addRoutine("SimplePath", autoRoutines::simplePathAuto);
-        autoChooser.addCmd("CommandTest", () -> autoRoutines.simpleAutoCommandTest());
+        
 
 
         SmartDashboard.putData("Auto Chooser", autoChooser);
