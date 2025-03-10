@@ -8,6 +8,7 @@ public enum ClawPivotStates {
     LTwo(0),
     LThree(0),
     LFour(0),
+    Shooting(0),
     HumanPlayer(0);
 
     private int value;

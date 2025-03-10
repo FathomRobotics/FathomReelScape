@@ -5,9 +5,6 @@ import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import frc.robot.subsystems.Claw.Claw;
-import frc.robot.subsystems.ClawPivot.ClawPivot;
-import frc.robot.subsystems.Elevator.Elevator;
 
 public class AutoRoutines {
     private final AutoFactory m_factory;
@@ -18,9 +15,7 @@ public class AutoRoutines {
 
     public AutoRoutine simplePathAuto() {
         final AutoRoutine routine = m_factory.newRoutine("SimplePath Auto");
-        final AutoTrajectory preload = routine.trajectory("PreloadTopJ");
-        final AutoTrajectory getFromstation = routine.trajectory("JToTop");
-        final AutoTrajectory scoreFromStation = routine.trajectory("TopToA");
+        final AutoTrajectory preload = routine.trajectory("PreloadMiddleG");
 
         routine.active().onTrue(
             Commands.sequence(
@@ -32,38 +27,83 @@ public class AutoRoutines {
 
         preload.done().onTrue(
             Commands.sequence(
-                new WaitCommand(1),
-                getFromstation.cmd()
+                new WaitCommand(1)
             )
             );
 
-        getFromstation.done().onTrue(
-            Commands.sequence(
-                new WaitCommand(1),
-                scoreFromStation.cmd()
-            )
-            
-           );
+        
 
 
         return routine;
     }
 
-    public AutoRoutine testThreeCoral(ClawPivot clawPivot, Claw claw, Elevator elevator){
+    public AutoRoutine ThreeCoralTop(){
 
-        final AutoRoutine routine = m_factory.newRoutine("SimplePath Auto");
+        final AutoRoutine routine = m_factory.newRoutine("TopAuto");
         final AutoTrajectory preload = routine.trajectory("PreloadTopJ");
         final AutoTrajectory getFromstation = routine.trajectory("JToTop");
         final AutoTrajectory scoreAtReefL = routine.trajectory("TopToL");
+        final AutoTrajectory LToStation = routine.trajectory("LToTop");
         final AutoTrajectory KToStation = routine.trajectory("KToTop");
         final AutoTrajectory scoreAtReefK = routine.trajectory("TopToK");
 
+        routine.active().onTrue(
+            Commands.sequence(
+
+                preload.resetOdometry(),
+                preload.cmd()
+            )
+        );
         
+        preload.done().onTrue(
+            Commands.sequence(
+                getFromstation.cmd()
+            )
+        );
+
+        getFromstation.done().onTrue(
+            Commands.sequence(
+                scoreAtReefL.cmd()
+            )
+        );
+
+        scoreAtReefL.done().onTrue(
+            Commands.sequence(
+                LToStation.cmd()
+            )
+        );
+
+        LToStation.done().onTrue(
+            Commands.sequence(
+                scoreAtReefK.cmd()
+            )
+        );
+
+        scoreAtReefK.done().onTrue(
+            Commands.sequence(
+                KToStation.cmd()
+            )
+        );
         
 
 
         return routine;
 
+    }
+    public AutoRoutine ThreeCoralBottom(){
+        final AutoRoutine routine = m_factory.newRoutine("BottomAuto");
+        final AutoTrajectory preload = routine.trajectory("PreloadBottomF");
+        final AutoTrajectory FToBottom = routine.trajectory("FToBottom");
+        final AutoTrajectory BottomToC = routine.trajectory("BottomToC");
+        final AutoTrajectory CToBottom = routine.trajectory("CToBottom");
+        final AutoTrajectory BottomToD = routine.trajectory("BottomToD");
+        final AutoTrajectory DToBottom = routine.trajectory("DToBottom");
+
+        
+
+
+
+        return routine;
     }
  
 }

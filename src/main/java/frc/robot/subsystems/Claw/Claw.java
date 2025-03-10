@@ -4,6 +4,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -18,18 +19,17 @@ public class Claw extends SubsystemBase{
     public ClawStates currentState = ClawStates.Intaking;
     private WantedGamepiece wantedGamepiece = WantedGamepiece.Coral;
 
-    private SparkMax LeftClawNeo = new SparkMax(ClawConfig.LeftClawNeoId, MotorType.kBrushless);
     private SparkMax RightClawNeo = new SparkMax(ClawConfig.RightClawNeoId, MotorType.kBrushless);
 
     private SparkMaxConfig LeftClawConfig = new SparkMaxConfig();
-    @SuppressWarnings("unused")
-    private SparkMaxConfig rightClawConfig = new SparkMaxConfig();
     
     private DoubleSolenoid leftFrontSolenoid  = new DoubleSolenoid(3,PneumaticsModuleType.CTREPCM, ClawConfig.LeftFrontSolonoidForwardId,ClawConfig.LeftFrontSolonoidReverseId);
     private DoubleSolenoid rightFrontSolenoid = new DoubleSolenoid(3,PneumaticsModuleType.CTREPCM,ClawConfig.RightFrontSolonoidForwardId,ClawConfig.RightFrontSolonoidReverseId);
 
     private DoubleSolenoid leftBackSolenoid = new DoubleSolenoid(3,PneumaticsModuleType.CTREPCM,ClawConfig.LeftBackSolonoidForwardId,ClawConfig.LeftBackSolonoidBackwardsId);
     private DoubleSolenoid rightBackSolenoid = new DoubleSolenoid(3,PneumaticsModuleType.CTREPCM,ClawConfig.RightBackSolonoidForwardId,ClawConfig.RightBackSolonoidReverseId);
+
+    private PIDController velocityController = new PIDController(0.1, 0, 0);
 
     private DigitalInput limitSwitch = new DigitalInput(ClawConfig.LimitSwitchId);
     
@@ -56,24 +56,21 @@ public class Claw extends SubsystemBase{
             }
         }
         
-       
+    
         switch (currentState) {
             case Intaking:
-                this.LeftClawNeo.set(1);
-                this.RightClawNeo.set(1);
+                this.setIntakeVelocity(-2000);
                 break;
             case Intoke:
-                this.LeftClawNeo.set(0.1);
-                this.RightClawNeo.set(0.1);
+                this.setIntakeVelocity(-100);
                 break;
-
             case Outtake:
-                this.LeftClawNeo.set(-1);
-                this.RightClawNeo.set(-1);
+                this.setIntakeVelocity(2000);
                 break;
+            case Shooting:
+                this.setIntakeVelocity(6000);
             default:
-                this.LeftClawNeo.set(0);
-                this.RightClawNeo.set(0);
+                this.setIntakeVelocity(0);
                 break;
         }
         
@@ -96,10 +93,17 @@ public class Claw extends SubsystemBase{
         this.rightBackSolenoid.set(Value.kReverse);
     }
 
+
+    public void setIntakeVelocity(double Value){
+        double power = velocityController.calculate(this.RightClawNeo.getEncoder().getVelocity(),Value);
+
+        this.RightClawNeo.set(power);
+    }
+
     public boolean getLimitSwitchBroken(){
         return this.limitSwitch.get();
     }
-
+    
     public Command setClawPiece(WantedGamepiece pGamepiece){
         return runOnce( () -> setWantedGamePiece(pGamepiece));
     }

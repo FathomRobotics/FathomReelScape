@@ -10,8 +10,14 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
-import com.ctre.phoenix6.swerve.SwerveRequest;
+import java.io.IOException;
 
+import org.json.simple.parser.ParseException;
+
+import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.FileVersionException;
 
 import choreo.auto.AutoChooser;
 import choreo.auto.AutoFactory;
@@ -22,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.Generated.TunerConstants;
+import frc.robot.commands.DriveToPoint;
 import frc.robot.subsystems.Drivetrain.CommandSwerveDrivetrain;
 
 public class RobotContainer {
@@ -34,7 +41,7 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+    //private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
    // private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric().withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
@@ -44,6 +51,14 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
+    PathPlannerPath aAlign;
+    PathPlannerPath bAlign;
+    PathPlannerPath cAlign;
+    PathPlannerPath dAlign;
+    PathPlannerPath lAlign;
+    PathPlannerPath kAlign;
+
+
     /* Path follower */
     private final AutoFactory autoFactory;
     private final AutoRoutines autoRoutines;
@@ -51,17 +66,48 @@ public class RobotContainer {
 
     
 
+    RobotConfig config;
+    
+    
+
   public RobotContainer() {
+        try{
+          config = RobotConfig.fromGUISettings();
+        } catch (Exception e) {
+          // Handle exception as needed
+          e.printStackTrace();
+        }
         autoFactory = drivetrain.createAutoFactory();
         autoRoutines = new AutoRoutines(autoFactory);
         
-        autoChooser.addRoutine("SimplePath", autoRoutines::simplePathAuto);
-        
+        autoChooser.addRoutine("SimplePath Auto", autoRoutines::simplePathAuto);
+        autoChooser.addRoutine("TopAuto", autoRoutines::ThreeCoralTop);
+
 
 
         SmartDashboard.putData("Auto Chooser", autoChooser);
 
-        
+        try {
+          aAlign = PathPlannerPath.fromPathFile("aAlign");
+          bAlign = PathPlannerPath.fromPathFile("bAlign");
+          cAlign = PathPlannerPath.fromPathFile("cAlign");
+          dAlign = PathPlannerPath.fromPathFile("dAlign");
+          lAlign = PathPlannerPath.fromPathFile("lAlign");
+          kAlign = PathPlannerPath.fromPathFile("kAlign");
+          
+
+
+
+        } catch (FileVersionException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        } catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        } catch (ParseException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
 
         configureBindings();
   }
@@ -76,13 +122,25 @@ public class RobotContainer {
             )
         );
 
-        joystick.circle().whileTrue(drivetrain.applyRequest(() -> brake));
         
-        joystick.triangle().whileTrue(drivetrain.applyRequest(() ->
+
+        joystick.cross().whileTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+
+        joystick.L3().whileTrue(drivetrain.applyRequest(() ->
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
 
         
+        joystick.povLeft().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(kAlign));
+        joystick.povLeft().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(lAlign));
+
+        joystick.povDown().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(aAlign));
+        joystick.povDown().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(bAlign));
+
+        joystick.povRight().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(cAlign));
+        joystick.povRight().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(dAlign));
+
+
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
@@ -92,7 +150,7 @@ public class RobotContainer {
         joystick.povUp().and(joystick.square()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         // reset the field-centric heading on left bumper press
-        joystick.L1().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        
 
         drivetrain.registerTelemetry(logger::telemeterize);
 
@@ -104,4 +162,7 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
      return autoChooser.selectedCommand();
   }
+
+  
 }
+
