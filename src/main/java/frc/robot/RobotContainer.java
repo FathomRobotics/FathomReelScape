@@ -30,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.Generated.TunerConstants;
 import frc.robot.commands.DriveToPoint;
 import frc.robot.subsystems.Drivetrain.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Vision.Eyes;
 
 public class RobotContainer {
 
@@ -49,7 +50,11 @@ public class RobotContainer {
 
     private final CommandPS5Controller joystick = new CommandPS5Controller(0);
 
+    private final CommandPS5Controller operator = new CommandPS5Controller(1);
+
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+
+   
 
     PathPlannerPath aAlign;
     PathPlannerPath bAlign;
@@ -99,13 +104,11 @@ public class RobotContainer {
 
 
         } catch (FileVersionException e) {
-          // TODO Auto-generated catch block
           e.printStackTrace();
         } catch (IOException e) {
-          // TODO Auto-generated catch block
+          
           e.printStackTrace();
         } catch (ParseException e) {
-          // TODO Auto-generated catch block
           e.printStackTrace();
         }
 
@@ -130,6 +133,7 @@ public class RobotContainer {
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
 
+
         
         joystick.povLeft().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(kAlign));
         joystick.povLeft().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(lAlign));
@@ -139,6 +143,8 @@ public class RobotContainer {
 
         joystick.povRight().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(cAlign));
         joystick.povRight().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(dAlign));
+
+
 
 
 

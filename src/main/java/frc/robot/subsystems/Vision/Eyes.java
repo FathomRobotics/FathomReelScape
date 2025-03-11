@@ -114,4 +114,8 @@ public class Eyes {
     public Matrix<N3, N1> getEstimationStdDevs() {
         return curStdDevs;
     }
+
+    public boolean isReal(){
+        return this.camera.isConnected();
+    }
 }

@@ -4,12 +4,20 @@
 
 package frc.robot;
 
+import java.util.Optional;
+
+import org.photonvision.EstimatedRobotPose;
+
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.subsystems.Vision.Eyes;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
+
+  public Eyes LeftTagCam = new Eyes("LeftTagCam", Constants.LeftElevatorCamPose);
+  public Eyes RightTagCam = new Eyes("RightTagCam", Constants.RightElevatorCamPose);
 
   private final RobotContainer m_robotContainer;
 
@@ -19,6 +27,29 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotPeriodic() {
+    if (LeftTagCam.isReal()){
+      EstimatedRobotPose LeftPose = LeftTagCam.getEstimatedGlobalPose().get();
+
+      if(LeftPose != null){
+        m_robotContainer.drivetrain.addVisionMeasurement(LeftPose.estimatedPose.toPose2d(), LeftPose.timestampSeconds);
+      }
+    }else{
+      System.out.println("Left camera isnt connected");
+    }
+    
+    if (RightTagCam.isReal()){
+      EstimatedRobotPose RightPose = RightTagCam.getEstimatedGlobalPose().get();
+      if(RightPose != null){
+        m_robotContainer.drivetrain.addVisionMeasurement(RightPose.estimatedPose.toPose2d(), RightPose.timestampSeconds);
+      }
+    }else{
+      System.out.println("Right camera isnt connected");
+    }
+    
+
+    
+    
+   
     CommandScheduler.getInstance().run();
     
   }
