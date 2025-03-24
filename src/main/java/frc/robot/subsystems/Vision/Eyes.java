@@ -1,5 +1,6 @@
 package frc.robot.subsystems.Vision;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,27 +11,24 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-
 import edu.wpi.first.math.Matrix;
 
 public class Eyes {
     private final PhotonCamera camera;
     private final PhotonPoseEstimator photonEstimator;
     private Matrix<N3, N1> curStdDevs;
-
+   // private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
     private Transform3d kRobotToCam =
                 new Transform3d(new Translation3d(0.5, 0.0, 0.5), new Rotation3d(0, 0, 0));
 
-        // The layout of the AprilTags on the field
-    private  final AprilTagFieldLayout kTagLayout =
-                AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+        // The layout of the AprilTags on the field'try 
+    private AprilTagFieldLayout kTagLayout;
 
         // The standard deviations of our vision estimated poses, which affect correction rate
         // (Fake values. Experiment and determine estimation noise on an actual robot.)
@@ -38,18 +36,25 @@ public class Eyes {
     private static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
 
     public Eyes(String cameraName, Transform3d robotToCameraPose){
+        try {
+            kTagLayout = AprilTagFieldLayout.loadFromResource("src/main/java/frc/Generated/2025-reefscape-andymark.jsom");
+        } catch(IOException e){
+            System.out.println(e);
+        }
         this.kRobotToCam = robotToCameraPose;
         camera = new PhotonCamera(cameraName);
 
         photonEstimator =
                 new PhotonPoseEstimator(kTagLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, kRobotToCam);
         photonEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+    
 
     }
 
     public Optional<EstimatedRobotPose> getEstimatedGlobalPose() {
         Optional<EstimatedRobotPose> visionEst = Optional.empty();
         for (var change : camera.getAllUnreadResults()) {
+           // photonEstimator.setLastPose(dt);
             visionEst = photonEstimator.update(change);
             updateEstimationStdDevs(visionEst, change.getTargets());
         }

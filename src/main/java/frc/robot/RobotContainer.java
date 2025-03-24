@@ -10,27 +10,29 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
-import java.io.IOException;
-
-import org.json.simple.parser.ParseException;
-
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.util.FileVersionException;
-
 import choreo.auto.AutoChooser;
 import choreo.auto.AutoFactory;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.Generated.TunerConstants;
-import frc.robot.commands.DriveToPoint;
+import frc.robot.commands.ScoreCommand;
+import frc.robot.subsystems.Claw.Claw;
+import frc.robot.subsystems.Claw.ClawStates;
+import frc.robot.subsystems.ClawPivot.ClawPivot;
+import frc.robot.subsystems.ClawWrist.ClawWrist;
 import frc.robot.subsystems.Drivetrain.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Vision.Eyes;
+import frc.robot.subsystems.Elevator.Elevator;
 
 public class RobotContainer {
 
@@ -50,18 +52,23 @@ public class RobotContainer {
 
     private final CommandPS5Controller joystick = new CommandPS5Controller(0);
 
-    private final CommandPS5Controller operator = new CommandPS5Controller(1);
+    public final CommandPS5Controller operator = new CommandPS5Controller(1);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    public final Elevator elevator = new Elevator();
+    public final Claw claw = new Claw();
+    public final ClawWrist wrist = new ClawWrist();
+    public final ClawPivot pivot = new ClawPivot();
 
-   
+    public RobotState lastScorePose = RobotState.L4_PREP;
+    private boolean isCoral = true;
 
-    PathPlannerPath aAlign;
-    PathPlannerPath bAlign;
-    PathPlannerPath cAlign;
-    PathPlannerPath dAlign;
-    PathPlannerPath lAlign;
-    PathPlannerPath kAlign;
+    //PathPlannerPath aAlign;
+    //PathPlannerPath bAlign;
+    //PathPlannerPath cAlign;
+    //PathPlannerPath dAlign;
+    //PathPlannerPath lAlign;
+    //PathPlannerPath kAlign;
 
 
     /* Path follower */
@@ -87,18 +94,19 @@ public class RobotContainer {
         
         autoChooser.addRoutine("SimplePath Auto", autoRoutines::simplePathAuto);
         autoChooser.addRoutine("TopAuto", autoRoutines::ThreeCoralTop);
+        autoChooser.addRoutine("TopGroundAuto", autoRoutines::GroundIntakeTopAuto);
 
 
 
         SmartDashboard.putData("Auto Chooser", autoChooser);
 
-        try {
-          aAlign = PathPlannerPath.fromPathFile("aAlign");
-          bAlign = PathPlannerPath.fromPathFile("bAlign");
-          cAlign = PathPlannerPath.fromPathFile("cAlign");
-          dAlign = PathPlannerPath.fromPathFile("dAlign");
-          lAlign = PathPlannerPath.fromPathFile("lAlign");
-          kAlign = PathPlannerPath.fromPathFile("kAlign");
+    /*   try {
+      //    aAlign = PathPlannerPath.fromPathFile("aAlign");
+      //    bAlign = PathPlannerPath.fromPathFile("bAlign");
+       //   cAlign = PathPlannerPath.fromPathFile("cAlign");
+       //   dAlign = PathPlannerPath.fromPathFile("dAlign");
+       //   lAlign = PathPlannerPath.fromPathFile("lAlign");
+       //   kAlign = PathPlannerPath.fromPathFile("kAlign");
           
 
 
@@ -112,12 +120,15 @@ public class RobotContainer {
           e.printStackTrace();
         }
 
+        */
         configureBindings();
   }
 
   private void configureBindings() {
+    
+    
     drivetrain.setDefaultCommand(
-             //Drivetrain will execute this command periodically
+        //Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
                 drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
                     .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
@@ -125,39 +136,128 @@ public class RobotContainer {
             )
         );
 
-        
-
-        joystick.cross().whileTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+      
+        joystick.povUp().whileTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         joystick.L3().whileTrue(drivetrain.applyRequest(() ->
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
 
+        operator.square().onTrue(new InstantCommand(() -> changeIntakeType(!isCoral)));
+
+        //operator.circle().onTrue(Commands.sequence(
+        //  this.wrist.goToPoseCommand(0),
+        //  this.pivot.goToPoseCommand(70)
+        //  //this.elevator.goToPositionCommand(13)
+      //  ));
+
+      //  operator.triangle().onTrue(Commands.sequence(
+      //    this.wrist.goToPoseCommand(20),
+       //   this.pivot.goToPoseCommand(50)
+          //this.elevator.goToPositionCommand(0)
+      //  ));
+        
+        operator.L2().onTrue(
+          new ConditionalCommand(
+            Commands.sequence(
+              this.claw.setStateCommand(ClawStates.Intaking),
+              this.elevator.goToPositionCommand(1)
+              ,
+              Commands.sequence(
+                this.wrist.goToPoseCommand(-35),
+                this.pivot.goToPoseCommand(55)
+              ),
+              new WaitCommand(0.4),
+              this.elevator.goToPositionCommand(0),
+                new WaitCommand(0.8),
+                this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+                Commands.sequence(
+                this.wrist.goToPoseCommand(35),
+                this.pivot.goToPoseCommand(80)
+             )
+          ),
+            Commands.sequence(
+              this.claw.setStateCommand(ClawStates.IntakeAlgae),
+              this.elevator.goToPositionCommand(0)
+              ,
+              Commands.sequence(
+                this.wrist.goToPoseCommand(10),
+                this.pivot.goToPoseCommand(40)
+              )
+            ),
+
+             () -> isCoral
+
+          )
+          
+        );
+
+        operator.povDown().onTrue(
+          Commands.sequence(
+            this.wrist.goToPoseCommand(35),
+              this.pivot.goToPoseCommand(90),
+              this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose())
+          )
+        );
+
+        /* 
+        operator.cross().onTrue(
+          Commands.sequence(
+            new ConditionalCommand(
+              this.elevator.goToPositionCommand(RobotState.L2_PREP.getElevatorPose()), 
+              this.elevator.goToPositionCommand(RobotState.L2_CLEAN_ALGAE.getElevatorPose())
+              , () -> isCoral),
+              new InstantCommand(() -> this.lastScorePose = RobotState.L2_PREP)
+        ));
+*/
+        operator.circle().onTrue(
+          Commands.sequence(
+            this.wrist.goToPoseCommand(35),
+            this.pivot.goToPoseCommand(90),
+          new ConditionalCommand(
+            this.elevator.goToPositionCommand(RobotState.L3_PREP.getElevatorPose()), 
+            this.elevator.goToPositionCommand(RobotState.L3_CLEAN_ALGAE.getElevatorPose()), 
+            () -> isCoral),
+            new InstantCommand(() -> this.lastScorePose = RobotState.L3_PREP)
+        ));
+        /* 
+        operator.triangle().onTrue(
+          Commands.sequence(
+          new ConditionalCommand(
+            this.elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose()), 
+            this.elevator.goToPositionCommand(RobotState.SCORE_BARGE.getElevatorPose())
+          , () -> isCoral),
+          new InstantCommand(() -> this.lastScorePose = RobotState.L4_PREP)
+        ));
+
+        operator.povDown().onTrue(
+          this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose())
+        );  
+ */
+        operator.R2().onTrue(
+          Commands.sequence(
+            new ScoreCommand(claw,pivot,wrist,elevator,this.lastScorePose)
+          )
+        );
+
+       
+        
+
+        //auto align
+       // joystick.povLeft().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(kAlign));
+       // joystick.povLeft().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(lAlign));
+
+       // joystick.povDown().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(aAlign));
+        //joystick.povDown().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(bAlign));
+
+        //joystick.povRight().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(cAlign));
+        //joystick.povRight().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(dAlign));
 
         
-        joystick.povLeft().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(kAlign));
-        joystick.povLeft().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(lAlign));
-
-        joystick.povDown().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(aAlign));
-        joystick.povDown().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(bAlign));
-
-        joystick.povRight().and(joystick.L1()).whileTrue(new DriveToPoint().cmd(cAlign));
-        joystick.povRight().and(joystick.R1()).whileTrue(new DriveToPoint().cmd(dAlign));
-
-
-
-
-
-        // Run SysId routines when holding back/start and X/Y.
-        // Note that each routine should be run exactly once in a single log.
-        joystick.povDown().and(joystick.cross()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.povDown().and(joystick.square()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.povUp().and(joystick.cross()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.povUp().and(joystick.square()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
-        // reset the field-centric heading on left bumper press
+        //driver 2 stuff
         
 
+        
         drivetrain.registerTelemetry(logger::telemeterize);
 
         
@@ -167,6 +267,10 @@ public class RobotContainer {
 
   public Command getAutonomousCommand() {
      return autoChooser.selectedCommand();
+  }
+
+  private void changeIntakeType(boolean isCoral){
+    this.isCoral = isCoral;
   }
 
   

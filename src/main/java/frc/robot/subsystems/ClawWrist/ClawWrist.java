@@ -1,4 +1,4 @@
-package frc.robot.subsystems.ClawPivot;
+package frc.robot.subsystems.ClawWrist;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
@@ -15,31 +15,27 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotState;
 
-public class ClawPivot extends SubsystemBase {
-    private SparkMax pivotMotor = new SparkMax(ClawPivotConfig.ClawPivotMotorID,MotorType.kBrushless);
+public class ClawWrist extends SubsystemBase {
+    private SparkMax pivotMotor = new SparkMax(ClawWristConfig.ClawWristMotorID,MotorType.kBrushless);
     private SparkClosedLoopController closedLoopController;
     private SparkMaxConfig pivotMotorConfig;
-
     private double targetPose = 0;
 
     private RobotState currentState = RobotState.STOW;
-    public ClawPivot(){
+    public ClawWrist(){
         closedLoopController = pivotMotor.getClosedLoopController();
         pivotMotorConfig = new SparkMaxConfig();
         
         pivotMotorConfig.smartCurrentLimit(40);
         pivotMotorConfig.idleMode(IdleMode.kCoast);
         
-        pivotMotorConfig.closedLoop.maxMotion
-            .maxVelocity(3000)
-            .maxAcceleration(8000)
-            .allowedClosedLoopError(0);
+        
 
         pivotMotorConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .outputRange(-1, 1)
            
-            .p(0.26)
+            .p(0.05)
             .i(0)
             .d(0);
 
@@ -49,7 +45,7 @@ public class ClawPivot extends SubsystemBase {
     }
 
     public void updatePivotPose(double pose){
-        this.closedLoopController.setReference(pose, ControlType.kMAXMotionPositionControl,ClosedLoopSlot.kSlot0);
+        this.closedLoopController.setReference(pose, ControlType.kPosition,ClosedLoopSlot.kSlot0);
     }
 
     public void changeState(RobotState newStates){
@@ -64,23 +60,32 @@ public class ClawPivot extends SubsystemBase {
     public Command changeStateCommand(RobotState newState){
         return runOnce( () -> changeState(newState));
     }
+
     public Command goToPoseCommand(double pose){
-        return runOnce( () -> changePose(pose));
+        return runOnce( ()-> changeTargetPose(pose));
     }
 
-    public void changePose(double pose){
+    public void changeTargetPose(double pose){
         this.targetPose = pose;
     }
     public boolean isAtPose(){ 
-        return Math.abs(this.pivotMotor.getEncoder().getPosition() - this.targetPose) < 0.05;
+        return Math.abs(this.pivotMotor.getAbsoluteEncoder().getPosition() - this.currentState.getClawWristPose()) < 0.05;
     }
     public double getPose(){
         return this.pivotMotor.get();
     }
 
+    public void setBrake(boolean enable){
+        if(enable){
+           this.pivotMotorConfig.idleMode(IdleMode.kBrake);
+        }else{
+            this.pivotMotorConfig.idleMode(IdleMode.kCoast);
+        }
+       
+    }
     @Override
     public void periodic() {
-        updatePivotPose(-this.targetPose);
+       updatePivotPose(this.targetPose);
     
         super.periodic();
     }

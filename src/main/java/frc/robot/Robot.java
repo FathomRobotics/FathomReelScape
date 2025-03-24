@@ -4,61 +4,91 @@
 
 package frc.robot;
 
-import java.util.Optional;
-
-import org.photonvision.EstimatedRobotPose;
-
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.Vision.Eyes;
 
 public class Robot extends TimedRobot {
+
+  NetworkTableInstance inst = NetworkTableInstance.getDefault();
+
   private Command m_autonomousCommand;
 
-  public Eyes LeftTagCam = new Eyes("LeftTagCam", Constants.LeftElevatorCamPose);
-  public Eyes RightTagCam = new Eyes("RightTagCam", Constants.RightElevatorCamPose);
+  //public Eyes LeftTagCam = new Eyes("LeftCamera", Constants.LeftElevatorCamPose);
+  //public Eyes RightTagCam = new Eyes("RightTagCam", Constants.RightElevatorCamPose);
 
   private final RobotContainer m_robotContainer;
 
+
   public Robot() {
     m_robotContainer = new RobotContainer();
+    
   }
 
   @Override
   public void robotPeriodic() {
+    this.m_robotContainer.wrist.setBrake(true);
+    /* 
     if (LeftTagCam.isReal()){
-      EstimatedRobotPose LeftPose = LeftTagCam.getEstimatedGlobalPose().get();
+      if(LeftTagCam.getEstimatedGlobalPose().isPresent()){
+      Pose3d LeftPose = LeftTagCam.getEstimatedGlobalPose().get().estimatedPose;
+      double timestamp = LeftTagCam.getEstimatedGlobalPose().get().timestampSeconds;
+      System.out.println(LeftPose);
 
       if(LeftPose != null){
-        m_robotContainer.drivetrain.addVisionMeasurement(LeftPose.estimatedPose.toPose2d(), LeftPose.timestampSeconds);
+        m_robotContainer.drivetrain.addVisionMeasurement(LeftPose.toPose2d(), timestamp);
       }
-    }else{
-      System.out.println("Left camera isnt connected");
     }
+    }else{
+     // System.out.println("Left camera isnt connected");
+    }
+*/
+    this.m_robotContainer.elevator.periodic();
+    this.m_robotContainer.claw.periodic();
+    this.m_robotContainer.wrist.periodic();
+    this.m_robotContainer.pivot.periodic();
     
-    if (RightTagCam.isReal()){
-      EstimatedRobotPose RightPose = RightTagCam.getEstimatedGlobalPose().get();
-      if(RightPose != null){
-        m_robotContainer.drivetrain.addVisionMeasurement(RightPose.estimatedPose.toPose2d(), RightPose.timestampSeconds);
-      }
-    }else{
-      System.out.println("Right camera isnt connected");
-    }
+    //if (RightTagCam.isReal()){
+    //  EstimatedRobotPose RightPose = RightTagCam.getEstimatedGlobalPose().get();
+   ////   if(RightPose != null){
+   //     m_robotContainer.drivetrain.addVisionMeasurement(RightPose.estimatedPose.toPose2d(), RightPose.timestampSeconds);
+     // }
+   // }else{
+   //   System.out.println("Right camera isnt connected");
+   // }
     
 
     
-    
-   
+    //m_robotContainer.elevator.VoltageTest(m_robotContainer.operator.getLeftY() * 12);
+  
+
+    SmartDashboard.putNumber("Voltage Given To ELevator", m_robotContainer.operator.getLeftY() * 12);
+    SmartDashboard.putNumber("Elevator Pose", m_robotContainer.elevator.getPosition());
+    SmartDashboard.putNumber("Wrist pose",m_robotContainer.wrist.getPose());
+    SmartDashboard.putNumber("Pivot Pose", m_robotContainer.pivot.getPose());
+    //SmartDashboard.putBoolean("Has piece", m_robotContainer.claw.getLimitSwitchBroken());
+   // if(m_robotContainer.operator.circle().getAsBoolean()){
+    //  SmartDashboard.putNumber("kv", m_robotContainer.elevator.kvTest() / 10);
+   // }else{
+   //   m_robotContainer.elevator.VoltageTest(0);
+   // }
     CommandScheduler.getInstance().run();
+    
+    
     
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    this.m_robotContainer.wrist.setBrake(false);
+  }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+
+  }
 
   @Override
   public void disabledExit() {}
@@ -83,6 +113,10 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+
+      this.m_robotContainer.elevator.goToPosition(1);
+      this.m_robotContainer.wrist.changeTargetPose(0);
+      this.m_robotContainer.pivot.changePose(70);
   }
 
   @Override
@@ -97,7 +131,11 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+    //add the poses here and put them on smart dashboard
+
+
+  }
 
   @Override
   public void testExit() {}

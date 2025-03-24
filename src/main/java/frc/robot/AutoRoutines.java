@@ -92,16 +92,53 @@ public class AutoRoutines {
     }
     public AutoRoutine ThreeCoralBottom(){
         final AutoRoutine routine = m_factory.newRoutine("BottomAuto");
-        final AutoTrajectory preload = routine.trajectory("PreloadBottomF");
-        final AutoTrajectory FToBottom = routine.trajectory("FToBottom");
-        final AutoTrajectory BottomToC = routine.trajectory("BottomToC");
-        final AutoTrajectory CToBottom = routine.trajectory("CToBottom");
-        final AutoTrajectory BottomToD = routine.trajectory("BottomToD");
-        final AutoTrajectory DToBottom = routine.trajectory("DToBottom");
+        //final AutoTrajectory preload = routine.trajectory("PreloadBottomF");
+        //final AutoTrajectory FToBottom = routine.trajectory("FToBottom");
+        //final AutoTrajectory BottomToC = routine.trajectory("BottomToC");
+        //final AutoTrajectory CToBottom = routine.trajectory("CToBottom");
+        //final AutoTrajectory BottomToD = routine.trajectory("BottomToD");
+        //final AutoTrajectory DToBottom = routine.trajectory("DToBottom");
 
         
 
 
+
+        return routine;
+    }
+
+    public AutoRoutine GroundIntakeTopAuto(){
+        final AutoRoutine routine = m_factory.newRoutine("Ground Intake top auto");
+
+        final AutoTrajectory preload = routine.trajectory("PreloadTopJ");
+        final AutoTrajectory TopCoralPickup = routine.trajectory("TopGroundCoral");
+        final AutoTrajectory TopCoralScore = routine.trajectory("TopGroundCoralPlace");
+        final AutoTrajectory MiddleCoral = routine.trajectory("MiddleGroundCoral");
+
+        routine.active().onTrue(
+            Commands.sequence(
+
+                preload.resetOdometry(),
+                preload.cmd()
+            )
+        );
+
+        preload.done().onTrue(
+            Commands.sequence(
+                TopCoralPickup.cmd()
+            )
+            );
+        
+        TopCoralPickup.done().onTrue(
+            Commands.sequence(
+                TopCoralScore.cmd()
+            )
+        );
+
+        TopCoralScore.done().onTrue(
+            Commands.sequence(
+                MiddleCoral.cmd()
+            )
+        );
 
         return routine;
     }

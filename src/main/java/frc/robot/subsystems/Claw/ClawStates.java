@@ -4,5 +4,6 @@ public enum ClawStates {
     Intaking,
     Intoke,
     Shooting,
-    Outtake
+    Outtake,
+    IntakeAlgae
 }

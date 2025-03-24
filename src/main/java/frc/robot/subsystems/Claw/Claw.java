@@ -6,9 +6,6 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.WantedGamepiece;
@@ -16,59 +13,45 @@ import frc.robot.util.WantedGamepiece;
 
 public class Claw extends SubsystemBase{
 
-    public ClawStates currentState = ClawStates.Intaking;
+    public ClawStates currentState = ClawStates.Intoke;
     private WantedGamepiece wantedGamepiece = WantedGamepiece.Coral;
 
     private SparkMax RightClawNeo = new SparkMax(ClawConfig.RightClawNeoId, MotorType.kBrushless);
+    private SparkMax LeftClawNeo = new SparkMax(ClawConfig.LeftClawNeoId, MotorType.kBrushless);
 
     private SparkMaxConfig LeftClawConfig = new SparkMaxConfig();
     
-    private DoubleSolenoid leftFrontSolenoid  = new DoubleSolenoid(3,PneumaticsModuleType.CTREPCM, ClawConfig.LeftFrontSolonoidForwardId,ClawConfig.LeftFrontSolonoidReverseId);
-    private DoubleSolenoid rightFrontSolenoid = new DoubleSolenoid(3,PneumaticsModuleType.CTREPCM,ClawConfig.RightFrontSolonoidForwardId,ClawConfig.RightFrontSolonoidReverseId);
-
-    private DoubleSolenoid leftBackSolenoid = new DoubleSolenoid(3,PneumaticsModuleType.CTREPCM,ClawConfig.LeftBackSolonoidForwardId,ClawConfig.LeftBackSolonoidBackwardsId);
-    private DoubleSolenoid rightBackSolenoid = new DoubleSolenoid(3,PneumaticsModuleType.CTREPCM,ClawConfig.RightBackSolonoidForwardId,ClawConfig.RightBackSolonoidReverseId);
-
+   
     private PIDController velocityController = new PIDController(0.1, 0, 0);
 
     private DigitalInput limitSwitch = new DigitalInput(ClawConfig.LimitSwitchId);
     
     public Claw(){
-        this.LeftClawConfig.inverted(true);
-        CoralIntake();
+        
+    
     }
 
     @Override
     public void periodic() {
-        if(limitSwitch.get() && this.currentState != ClawStates.Outtake){
+        if(getLimitSwitchBroken() && this.currentState != ClawStates.Outtake && this.currentState != ClawStates.IntakeAlgae ){
             this.currentState = ClawStates.Intoke;
-        }else{
-            switch (wantedGamepiece) {
-                case Coral:
-                    CoralIntake();
-                    break;
-                case Algae:
-                    AlgaeIntake();
-    
-                default:
-                    
-                    break;
-            }
         }
         
     
         switch (currentState) {
             case Intaking:
-                this.setIntakeVelocity(-2000);
+                this.setIntakeVelocity(0.5);
                 break;
             case Intoke:
-                this.setIntakeVelocity(-100);
+                this.setIntakeVelocity(0);
                 break;
             case Outtake:
-                this.setIntakeVelocity(2000);
+                this.setIntakeVelocity(-0.5);
                 break;
             case Shooting:
-                this.setIntakeVelocity(6000);
+                this.setIntakeVelocity(0);
+            case IntakeAlgae:
+                this.setIntakeVelocity(0.3);
             default:
                 this.setIntakeVelocity(0);
                 break;
@@ -76,34 +59,29 @@ public class Claw extends SubsystemBase{
         
         super.periodic();
     }
-  
-    public void CoralIntake(){
-        this.leftFrontSolenoid.set(Value.kForward);
-        this.rightFrontSolenoid.set(Value.kForward);
 
-        this.leftBackSolenoid.set(Value.kForward);
-        this.rightBackSolenoid.set(Value.kForward);
-    }
-
-    public void AlgaeIntake(){
-        this.leftFrontSolenoid.set(Value.kReverse);
-        this.rightFrontSolenoid.set(Value.kReverse);
-
-        this.leftBackSolenoid.set(Value.kReverse);
-        this.rightBackSolenoid.set(Value.kReverse);
-    }
 
 
     public void setIntakeVelocity(double Value){
-        double power = velocityController.calculate(this.RightClawNeo.getEncoder().getVelocity(),Value);
+        
 
-        this.RightClawNeo.set(power);
+        this.RightClawNeo.set(Value);
+        this.LeftClawNeo.set(-Value);
+        
     }
 
     public boolean getLimitSwitchBroken(){
-        return this.limitSwitch.get();
+       return !this.limitSwitch.get();
+    }
+
+    public void setState(ClawStates newState){
+       this.currentState = newState;
+       
     }
     
+    public Command setStateCommand(ClawStates newState){
+        return runOnce( () -> setState(newState));
+    }
     public Command setClawPiece(WantedGamepiece pGamepiece){
         return runOnce( () -> setWantedGamePiece(pGamepiece));
     }
