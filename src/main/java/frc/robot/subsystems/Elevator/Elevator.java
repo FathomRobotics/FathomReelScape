@@ -9,6 +9,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -37,6 +38,8 @@ public class Elevator extends SubsystemBase {
 
         motorA.setNeutralMode(NeutralModeValue.Brake);
         motorB.setNeutralMode(NeutralModeValue.Brake);
+
+      cfg.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         
        var limitConfigs = new CurrentLimitsConfigs();
 
@@ -53,14 +56,14 @@ public class Elevator extends SubsystemBase {
       /* Configure Motion Magic */
 
       var motionMagicConfigs = cfg.MotionMagic;
-      motionMagicConfigs.MotionMagicCruiseVelocity =  6; // Target cruise velocity of 80 rps
-      motionMagicConfigs.MotionMagicAcceleration =  6 * 10 ; // Target acceleration of 160 rps/s (0.5 seconds)
-      motionMagicConfigs.MotionMagicJerk = 6 * 10 * 5; // Target jerk of 1600 rps/s/s (0.1 seconds)
+      motionMagicConfigs.MotionMagicCruiseVelocity =  5; // Target cruise velocity of 80 rps
+      motionMagicConfigs.MotionMagicAcceleration =  5 * 3 ; // Target acceleration of 160 rps/s (0.5 seconds)
+      motionMagicConfigs.MotionMagicJerk = 5 * 3 * 3; // Target jerk of 1600 rps/s/s (0.1 seconds)
      
 
 
       Slot0Configs slot0 = cfg.Slot0;
-      slot0.kS = 0.28; // Add 0.25 V output to overcome static friction
+      slot0.kS = 0.4; // Add 0.25 V output to overcome static friction was 0.28
       slot0.kV = 4; // A velocity target of 1 rps results in 0.12 V output was 8.48
       slot0.kA = 0.02; // An acceleration of 1 rps/s requires 0.01 V output
       slot0.kP = 25; // A position error of 0.2 rotations results in 12 V output
@@ -88,7 +91,7 @@ public class Elevator extends SubsystemBase {
 
 
     public void goToPosition (double newPosition){
-      this.targetPose =  -newPosition;
+      this.targetPose =  newPosition;
 
     }
 

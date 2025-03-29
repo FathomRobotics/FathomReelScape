@@ -18,7 +18,6 @@ import choreo.auto.AutoFactory;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -26,10 +25,8 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.Generated.TunerConstants;
-import frc.robot.commands.ScoreCommand;
 import frc.robot.subsystems.Claw.Claw;
 import frc.robot.subsystems.Claw.ClawStates;
-import frc.robot.subsystems.ClawPivot.ClawPivot;
 import frc.robot.subsystems.ClawWrist.ClawWrist;
 import frc.robot.subsystems.Drivetrain.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Elevator.Elevator;
@@ -58,7 +55,6 @@ public class RobotContainer {
     public final Elevator elevator = new Elevator();
     public final Claw claw = new Claw();
     public final ClawWrist wrist = new ClawWrist();
-    public final ClawPivot pivot = new ClawPivot();
 
     public RobotState lastScorePose = RobotState.L4_PREP;
     private boolean isCoral = true;
@@ -90,7 +86,7 @@ public class RobotContainer {
           e.printStackTrace();
         }
         autoFactory = drivetrain.createAutoFactory();
-        autoRoutines = new AutoRoutines(autoFactory);
+        autoRoutines = new AutoRoutines(autoFactory,this.elevator,this.wrist,this.claw);
         
         autoChooser.addRoutine("SimplePath Auto", autoRoutines::simplePathAuto);
         autoChooser.addRoutine("TopAuto", autoRoutines::ThreeCoralTop);
@@ -145,100 +141,89 @@ public class RobotContainer {
 
         operator.square().onTrue(new InstantCommand(() -> changeIntakeType(!isCoral)));
 
-        //operator.circle().onTrue(Commands.sequence(
-        //  this.wrist.goToPoseCommand(0),
-        //  this.pivot.goToPoseCommand(70)
-        //  //this.elevator.goToPositionCommand(13)
-      //  ));
-
-      //  operator.triangle().onTrue(Commands.sequence(
-      //    this.wrist.goToPoseCommand(20),
-       //   this.pivot.goToPoseCommand(50)
-          //this.elevator.goToPositionCommand(0)
-      //  ));
-        
         operator.L2().onTrue(
           new ConditionalCommand(
             Commands.sequence(
               this.claw.setStateCommand(ClawStates.Intaking),
-              this.elevator.goToPositionCommand(1)
-              ,
-              Commands.sequence(
-                this.wrist.goToPoseCommand(-35),
-                this.pivot.goToPoseCommand(55)
-              ),
-              new WaitCommand(0.4),
-              this.elevator.goToPositionCommand(0),
-                new WaitCommand(0.8),
-                this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
-                Commands.sequence(
-                this.wrist.goToPoseCommand(35),
-                this.pivot.goToPoseCommand(80)
-             )
-          ),
+              this.elevator.goToPositionCommand(RobotState.HUMAN_PLAYER_INTAKE.getElevatorPose()),
+              this.wrist.goToPoseCommand(RobotState.HUMAN_PLAYER_INTAKE.getClawWristPose()),
+
+              new WaitUntilCommand( () ->this.claw.getLimitSwitchBroken()),
+
+              this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+              this.wrist.goToPoseCommand(RobotState.STOW.getClawWristPose())
+            )
+          ,
             Commands.sequence(
               this.claw.setStateCommand(ClawStates.IntakeAlgae),
               this.elevator.goToPositionCommand(0)
               ,
               Commands.sequence(
-                this.wrist.goToPoseCommand(10),
-                this.pivot.goToPoseCommand(40)
+                this.wrist.goToPoseCommand(-30)
               )
             ),
-
              () -> isCoral
-
           )
           
         );
 
         operator.povDown().onTrue(
           Commands.sequence(
-            this.wrist.goToPoseCommand(35),
-              this.pivot.goToPoseCommand(90),
-              this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose())
+            this.wrist.goToPoseCommand(RobotState.STOW.getClawWristPose()),
+              this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+              this.claw.setStateCommand(ClawStates.Intoke)
           )
         );
 
-        /* 
         operator.cross().onTrue(
           Commands.sequence(
             new ConditionalCommand(
               this.elevator.goToPositionCommand(RobotState.L2_PREP.getElevatorPose()), 
               this.elevator.goToPositionCommand(RobotState.L2_CLEAN_ALGAE.getElevatorPose())
               , () -> isCoral),
-              new InstantCommand(() -> this.lastScorePose = RobotState.L2_PREP)
+              new InstantCommand(() -> this.lastScorePose = RobotState.L2_PREP),
+              wrist.goToPoseCommand(RobotState.L2_PREP.getClawWristPose())
         ));
-*/
+
         operator.circle().onTrue(
-          Commands.sequence(
-            this.wrist.goToPoseCommand(35),
-            this.pivot.goToPoseCommand(90),
+          Commands.sequence(  
           new ConditionalCommand(
             this.elevator.goToPositionCommand(RobotState.L3_PREP.getElevatorPose()), 
             this.elevator.goToPositionCommand(RobotState.L3_CLEAN_ALGAE.getElevatorPose()), 
             () -> isCoral),
-            new InstantCommand(() -> this.lastScorePose = RobotState.L3_PREP)
+            new InstantCommand(() -> this.lastScorePose = RobotState.L3_PREP),
+            wrist.goToPoseCommand(RobotState.L3_PREP.getClawWristPose())
         ));
-        /* 
+       
         operator.triangle().onTrue(
           Commands.sequence(
           new ConditionalCommand(
             this.elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose()), 
             this.elevator.goToPositionCommand(RobotState.SCORE_BARGE.getElevatorPose())
           , () -> isCoral),
-          new InstantCommand(() -> this.lastScorePose = RobotState.L4_PREP)
+          new InstantCommand(() -> this.lastScorePose = RobotState.L4_PREP),
+          wrist.goToPoseCommand(RobotState.L4_PREP.getClawWristPose())
         ));
 
-        operator.povDown().onTrue(
-          this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose())
-        );  
- */
-        operator.R2().onTrue(
-          Commands.sequence(
-            new ScoreCommand(claw,pivot,wrist,elevator,this.lastScorePose)
-          )
+         
+        operator.R2().whileTrue(
+            new ConditionalCommand(
+              this.claw.setStateCommand(ClawStates.Outtake),
+              Commands.sequence(
+                this.elevator.goToPositionCommand(RobotState.L1_PREP.getElevatorPose()),
+                this.wrist.goToPoseCommand(RobotState.L1_PREP.getClawWristPose()),
+                new InstantCommand(() -> this.lastScorePose = RobotState.L1_PREP),
+                this.claw.setStateCommand(ClawStates.Outtake)
+              ),
+               () -> (this.lastScorePose != RobotState.L4_PREP && this.lastScorePose != RobotState.L3_PREP && this.lastScorePose != RobotState.L2_PREP )
+           )
         );
+
+      
+        
+
+        
+
 
        
         

@@ -5,12 +5,21 @@ import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import frc.robot.subsystems.Claw.Claw;
+import frc.robot.subsystems.Claw.ClawStates;
+import frc.robot.subsystems.ClawWrist.ClawWrist;
+import frc.robot.subsystems.Elevator.Elevator;
 
 public class AutoRoutines {
     private final AutoFactory m_factory;
-
-    public AutoRoutines(AutoFactory factory) {
+    private Elevator elevator;
+    private ClawWrist wrist;
+    private Claw claw;
+    public AutoRoutines(AutoFactory factory,Elevator elevator, ClawWrist wrist, Claw claw) {
         m_factory = factory;
+        this.elevator = elevator;
+        this.wrist = wrist;
+        this.claw = claw;
     }
 
     public AutoRoutine simplePathAuto() {
@@ -118,27 +127,40 @@ public class AutoRoutines {
             Commands.sequence(
 
                 preload.resetOdometry(),
-                preload.cmd()
+                Commands.parallel(
+                preload.cmd(),
+                elevator.goToPositionCommand(RobotState.L3_PREP.getElevatorPose()),
+                wrist.goToPoseCommand(RobotState.L3_PREP.getClawWristPose())
+                )
             )
         );
 
         preload.done().onTrue(
             Commands.sequence(
-                TopCoralPickup.cmd()
+                new WaitCommand(0.5),
+                claw.setStateCommand(ClawStates.Outtake),
+                new WaitCommand(0.8),
+                wrist.goToPoseCommand(RobotState.STOW.getClawWristPose()),
+                new WaitCommand(0.5),
+                elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+                new WaitCommand(2)
+               // TopCoralPickup.cmd()
+
             )
             );
-        
-        TopCoralPickup.done().onTrue(
-            Commands.sequence(
-                TopCoralScore.cmd()
-            )
-        );
+    
+        //TopCoralPickup.done().onTrue(
+          //  Commands.sequence(
+          //      TopCoralScore.cmd()
+          //  )
+      //  );
 
-        TopCoralScore.done().onTrue(
+        /*TopCoralScore.done().onTrue(
             Commands.sequence(
                 MiddleCoral.cmd()
             )
         );
+        */
 
         return routine;
     }

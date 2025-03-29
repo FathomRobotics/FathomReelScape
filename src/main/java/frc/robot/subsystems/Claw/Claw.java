@@ -2,9 +2,6 @@ package frc.robot.subsystems.Claw;
 
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.SparkMaxConfig;
-
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -19,28 +16,29 @@ public class Claw extends SubsystemBase{
     private SparkMax RightClawNeo = new SparkMax(ClawConfig.RightClawNeoId, MotorType.kBrushless);
     private SparkMax LeftClawNeo = new SparkMax(ClawConfig.LeftClawNeoId, MotorType.kBrushless);
 
-    private SparkMaxConfig LeftClawConfig = new SparkMaxConfig();
-    
-   
-    private PIDController velocityController = new PIDController(0.1, 0, 0);
 
     private DigitalInput limitSwitch = new DigitalInput(ClawConfig.LimitSwitchId);
     
     public Claw(){
-        
     
     }
 
     @Override
     public void periodic() {
-        if(getLimitSwitchBroken() && this.currentState != ClawStates.Outtake && this.currentState != ClawStates.IntakeAlgae ){
-            this.currentState = ClawStates.Intoke;
+        if(getLimitSwitchBroken() && this.currentState != ClawStates.Outtake){
+
+            if (currentState == ClawStates.IntakeAlgae){
+
+            }else{
+                this.currentState = ClawStates.Intoke;
+            }
+            
         }
         
     
         switch (currentState) {
             case Intaking:
-                this.setIntakeVelocity(0.5);
+                this.setIntakeVelocity(0.6);
                 break;
             case Intoke:
                 this.setIntakeVelocity(0);
@@ -50,8 +48,10 @@ public class Claw extends SubsystemBase{
                 break;
             case Shooting:
                 this.setIntakeVelocity(0);
+                break;
             case IntakeAlgae:
-                this.setIntakeVelocity(0.3);
+                this.setIntakeVelocity(0.4);
+                break;
             default:
                 this.setIntakeVelocity(0);
                 break;

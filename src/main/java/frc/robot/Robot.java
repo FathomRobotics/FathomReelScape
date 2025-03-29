@@ -48,7 +48,6 @@ public class Robot extends TimedRobot {
     this.m_robotContainer.elevator.periodic();
     this.m_robotContainer.claw.periodic();
     this.m_robotContainer.wrist.periodic();
-    this.m_robotContainer.pivot.periodic();
     
     //if (RightTagCam.isReal()){
     //  EstimatedRobotPose RightPose = RightTagCam.getEstimatedGlobalPose().get();
@@ -67,7 +66,6 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Voltage Given To ELevator", m_robotContainer.operator.getLeftY() * 12);
     SmartDashboard.putNumber("Elevator Pose", m_robotContainer.elevator.getPosition());
     SmartDashboard.putNumber("Wrist pose",m_robotContainer.wrist.getPose());
-    SmartDashboard.putNumber("Pivot Pose", m_robotContainer.pivot.getPose());
     //SmartDashboard.putBoolean("Has piece", m_robotContainer.claw.getLimitSwitchBroken());
    // if(m_robotContainer.operator.circle().getAsBoolean()){
     //  SmartDashboard.putNumber("kv", m_robotContainer.elevator.kvTest() / 10);
@@ -116,7 +114,6 @@ public class Robot extends TimedRobot {
 
       this.m_robotContainer.elevator.goToPosition(1);
       this.m_robotContainer.wrist.changeTargetPose(0);
-      this.m_robotContainer.pivot.changePose(70);
   }
 
   @Override

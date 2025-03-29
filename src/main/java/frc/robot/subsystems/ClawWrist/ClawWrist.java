@@ -19,7 +19,7 @@ public class ClawWrist extends SubsystemBase {
     private SparkMax pivotMotor = new SparkMax(ClawWristConfig.ClawWristMotorID,MotorType.kBrushless);
     private SparkClosedLoopController closedLoopController;
     private SparkMaxConfig pivotMotorConfig;
-    private double targetPose = 0;
+    private double targetPose = RobotState.STOW.getClawWristPose();
 
     private RobotState currentState = RobotState.STOW;
     public ClawWrist(){
