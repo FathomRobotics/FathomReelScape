@@ -30,6 +30,7 @@ import frc.robot.subsystems.Claw.ClawStates;
 import frc.robot.subsystems.ClawWrist.ClawWrist;
 import frc.robot.subsystems.Drivetrain.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Elevator.Elevator;
+import frc.robot.subsystems.StevesRevenge.Climb;
 
 public class RobotContainer {
 
@@ -55,9 +56,12 @@ public class RobotContainer {
     public final Elevator elevator = new Elevator();
     public final Claw claw = new Claw();
     public final ClawWrist wrist = new ClawWrist();
+    public final Climb climb = new Climb();
 
     public RobotState lastScorePose = RobotState.L4_PREP;
     private boolean isCoral = true;
+
+    public double elevatorOffset = 0;
 
     //PathPlannerPath aAlign;
     //PathPlannerPath bAlign;
@@ -122,7 +126,15 @@ public class RobotContainer {
 
   private void configureBindings() {
     
+
+
+    operator.povRight().onTrue(
+      Commands.runOnce(() -> changeOffset(0.1))
+    );
     
+    operator.povLeft().onTrue(
+      Commands.runOnce(() -> changeOffset(-0.1))
+    );
     drivetrain.setDefaultCommand(
         //Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
@@ -145,12 +157,12 @@ public class RobotContainer {
           new ConditionalCommand(
             Commands.sequence(
               this.claw.setStateCommand(ClawStates.Intaking),
-              this.elevator.goToPositionCommand(RobotState.HUMAN_PLAYER_INTAKE.getElevatorPose()),
+              this.elevator.goToPositionCommand(RobotState.HUMAN_PLAYER_INTAKE.getElevatorPose() + getElevatorOffset()),
               this.wrist.goToPoseCommand(RobotState.HUMAN_PLAYER_INTAKE.getClawWristPose()),
 
               new WaitUntilCommand( () ->this.claw.getLimitSwitchBroken()),
 
-              this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+              this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose() + getElevatorOffset()),
               this.wrist.goToPoseCommand(RobotState.STOW.getClawWristPose())
             )
           ,
@@ -159,7 +171,7 @@ public class RobotContainer {
               this.elevator.goToPositionCommand(0)
               ,
               Commands.sequence(
-                this.wrist.goToPoseCommand(-30)
+                this.wrist.goToPoseCommand(RobotState.GROUND_INTAKE_ALGAE.getClawWristPose())
               )
             ),
              () -> isCoral
@@ -170,15 +182,22 @@ public class RobotContainer {
         operator.povDown().onTrue(
           Commands.sequence(
             this.wrist.goToPoseCommand(RobotState.STOW.getClawWristPose()),
-              this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+              this.elevator.goToPositionCommand(RobotState.STOW.getElevatorPose() + getElevatorOffset()),
               this.claw.setStateCommand(ClawStates.Intoke)
+          )
+        );
+
+        operator.povUp().onTrue(
+          Commands.sequence(
+            this.elevator.goToPositionCommand(0),
+            this.wrist.goToPoseCommand(RobotState.STOW.getClawWristPose())
           )
         );
 
         operator.cross().onTrue(
           Commands.sequence(
             new ConditionalCommand(
-              this.elevator.goToPositionCommand(RobotState.L2_PREP.getElevatorPose()), 
+              this.elevator.goToPositionCommand(RobotState.L2_PREP.getElevatorPose() + getElevatorOffset()), 
               this.elevator.goToPositionCommand(RobotState.L2_CLEAN_ALGAE.getElevatorPose())
               , () -> isCoral),
               new InstantCommand(() -> this.lastScorePose = RobotState.L2_PREP),
@@ -188,7 +207,7 @@ public class RobotContainer {
         operator.circle().onTrue(
           Commands.sequence(  
           new ConditionalCommand(
-            this.elevator.goToPositionCommand(RobotState.L3_PREP.getElevatorPose()), 
+            this.elevator.goToPositionCommand(RobotState.L3_PREP.getElevatorPose() + getElevatorOffset()), 
             this.elevator.goToPositionCommand(RobotState.L3_CLEAN_ALGAE.getElevatorPose()), 
             () -> isCoral),
             new InstantCommand(() -> this.lastScorePose = RobotState.L3_PREP),
@@ -198,7 +217,7 @@ public class RobotContainer {
         operator.triangle().onTrue(
           Commands.sequence(
           new ConditionalCommand(
-            this.elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose()), 
+            this.elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose() + getElevatorOffset()), 
             this.elevator.goToPositionCommand(RobotState.SCORE_BARGE.getElevatorPose())
           , () -> isCoral),
           new InstantCommand(() -> this.lastScorePose = RobotState.L4_PREP),
@@ -207,19 +226,15 @@ public class RobotContainer {
 
          
         operator.R2().whileTrue(
-            new ConditionalCommand(
-              this.claw.setStateCommand(ClawStates.Outtake),
-              Commands.sequence(
-                this.elevator.goToPositionCommand(RobotState.L1_PREP.getElevatorPose()),
-                this.wrist.goToPoseCommand(RobotState.L1_PREP.getClawWristPose()),
-                new InstantCommand(() -> this.lastScorePose = RobotState.L1_PREP),
-                this.claw.setStateCommand(ClawStates.Outtake)
-              ),
-               () -> (this.lastScorePose != RobotState.L4_PREP && this.lastScorePose != RobotState.L3_PREP && this.lastScorePose != RobotState.L2_PREP )
-           )
+            this.claw.setStateCommand(ClawStates.Outtake)
         );
 
       
+        operator.L3().whileTrue(
+          Commands.sequence(
+            new InstantCommand( () -> elevator.enableOverride( () -> -operator.getLeftY()))
+          )
+        );
         
 
         
@@ -258,6 +273,12 @@ public class RobotContainer {
     this.isCoral = isCoral;
   }
 
+  public double getElevatorOffset(){
+    return this.elevatorOffset;
+  }
   
+  public void changeOffset(double amount){
+    this.elevatorOffset += amount;
+  }
 }
 

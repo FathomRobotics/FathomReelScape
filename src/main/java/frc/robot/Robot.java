@@ -30,6 +30,8 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     this.m_robotContainer.wrist.setBrake(true);
+
+    this.m_robotContainer.climb.setPower(m_robotContainer.operator.getRightY());
     /* 
     if (LeftTagCam.isReal()){
       if(LeftTagCam.getEstimatedGlobalPose().isPresent()){

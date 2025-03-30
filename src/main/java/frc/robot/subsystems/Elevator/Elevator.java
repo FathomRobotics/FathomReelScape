@@ -1,6 +1,8 @@
 package frc.robot.subsystems.Elevator;
 
 
+import java.util.function.DoubleSupplier;
+
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -32,6 +34,9 @@ public class Elevator extends SubsystemBase {
   private final MotionMagicVoltage motionControl = new MotionMagicVoltage(0);
   private final Follower follow = new Follower(ElevatorConfig.MotorAcanID, false);
 
+  private DoubleSupplier ds;
+
+  private boolean override = false;
 
   public Elevator(){
        TalonFXConfiguration cfg = new TalonFXConfiguration();
@@ -91,6 +96,7 @@ public class Elevator extends SubsystemBase {
 
 
     public void goToPosition (double newPosition){
+      this.override = false;
       this.targetPose =  newPosition;
 
     }
@@ -108,8 +114,14 @@ public class Elevator extends SubsystemBase {
     }
 
     public void VoltageTest(double power){
-        motorA.setVoltage(power);
+        this.override = true;
+        motorA.setVoltage(power * 5);
         motorB.setControl(follow);
+    }
+
+    public void enableOverride(DoubleSupplier power){
+      this.ds = power;
+      this.override = true;
     }
 
     public double kvTest(){
@@ -126,8 +138,13 @@ public class Elevator extends SubsystemBase {
 
     @Override
     public void periodic(){
-      motorA.setControl(motionControl.withPosition(targetPose).withSlot(0));
-      motorB.setControl(follow);
+      if(!this.override){
+        motorA.setControl(motionControl.withPosition(targetPose).withSlot(0));
+        motorB.setControl(follow);
+  
+      }else{
+        this.VoltageTest(this.ds.getAsDouble());
+      }
 
       
     }

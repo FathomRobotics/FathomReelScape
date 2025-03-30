@@ -35,7 +35,7 @@ public class ClawWrist extends SubsystemBase {
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .outputRange(-1, 1)
            
-            .p(0.05)
+            .p(0.5)
             .i(0)
             .d(0);
 

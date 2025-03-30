@@ -4,7 +4,9 @@ import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.subsystems.Claw.Claw;
 import frc.robot.subsystems.Claw.ClawStates;
 import frc.robot.subsystems.ClawWrist.ClawWrist;
@@ -137,23 +139,39 @@ public class AutoRoutines {
 
         preload.done().onTrue(
             Commands.sequence(
+                claw.setStateCommand(ClawStates.Intaking),
                 new WaitCommand(0.5),
                 claw.setStateCommand(ClawStates.Outtake),
                 new WaitCommand(0.8),
                 wrist.goToPoseCommand(RobotState.STOW.getClawWristPose()),
                 new WaitCommand(0.5),
                 elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
-                new WaitCommand(2)
-               // TopCoralPickup.cmd()
+                new WaitCommand(2),
+                new ParallelCommandGroup(
+                    TopCoralPickup.cmd(),
+                    elevator.goToPositionCommand(0),
+                    wrist.goToPoseCommand(RobotState.GROUND_INTAKE_CORAL.getClawWristPose()),
+                    claw.setStateCommand(ClawStates.Intaking)
+                )
+                
+                 
 
             )
             );
     
-        //TopCoralPickup.done().onTrue(
-          //  Commands.sequence(
-          //      TopCoralScore.cmd()
-          //  )
-      //  );
+        TopCoralPickup.done().onTrue(
+            Commands.sequence(
+                elevator.goToPositionCommand(RobotState.L2_PREP.getElevatorPose()),
+                new WaitCommand(2),
+                new ParallelCommandGroup(
+                    TopCoralScore.cmd(),
+                    elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose())
+                )
+
+                
+                
+            )
+        );
 
         /*TopCoralScore.done().onTrue(
             Commands.sequence(
