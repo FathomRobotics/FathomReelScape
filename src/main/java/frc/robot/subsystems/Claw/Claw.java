@@ -38,13 +38,13 @@ public class Claw extends SubsystemBase{
     
         switch (currentState) {
             case Intaking:
-                this.setIntakeVelocity(0.6);
+                this.setIntakeVelocity(1);
                 break;
             case Intoke:
                 this.setIntakeVelocity(0);
                 break;
             case Outtake:
-                this.setIntakeVelocity(-0.5);
+                this.setIntakeVelocity(-0.6);
                 break;
             case Shooting:
                 this.setIntakeVelocity(0);

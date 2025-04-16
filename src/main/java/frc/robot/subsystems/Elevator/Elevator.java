@@ -61,9 +61,9 @@ public class Elevator extends SubsystemBase {
       /* Configure Motion Magic */
 
       var motionMagicConfigs = cfg.MotionMagic;
-      motionMagicConfigs.MotionMagicCruiseVelocity =  5; // Target cruise velocity of 80 rps
-      motionMagicConfigs.MotionMagicAcceleration =  5 * 3 ; // Target acceleration of 160 rps/s (0.5 seconds)
-      motionMagicConfigs.MotionMagicJerk = 5 * 3 * 3; // Target jerk of 1600 rps/s/s (0.1 seconds)
+      motionMagicConfigs.MotionMagicCruiseVelocity =  10; // Target cruise velocity of 80 rps
+      motionMagicConfigs.MotionMagicAcceleration =  10 * 2 ; // Target acceleration of 160 rps/s (0.5 seconds)
+      motionMagicConfigs.MotionMagicJerk = 10 * 2* 3; // Target jerk of 1600 rps/s/s (0.1 seconds)
      
 
 
@@ -73,7 +73,7 @@ public class Elevator extends SubsystemBase {
       slot0.kA = 0.02; // An acceleration of 1 rps/s requires 0.01 V output
       slot0.kP = 25; // A position error of 0.2 rotations results in 12 V output
       slot0.kI = 0; // No output for integrated error
-      slot0.kD = 0.5; // A velocity error of 1 rps results in 0.5 V output was 0.5
+      slot0.kD = 0; // A velocity error of 1 rps results in 0.5 V output was 0.5
       
 
 

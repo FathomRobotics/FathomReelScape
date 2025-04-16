@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.subsystems.Claw.Claw;
 import frc.robot.subsystems.Claw.ClawStates;
+import frc.robot.subsystems.Claw.ClawTuah;
 import frc.robot.subsystems.ClawWrist.ClawWrist;
 import frc.robot.subsystems.Elevator.Elevator;
 
@@ -16,42 +17,19 @@ public class AutoRoutines {
     private final AutoFactory m_factory;
     private Elevator elevator;
     private ClawWrist wrist;
-    private Claw claw;
-    public AutoRoutines(AutoFactory factory,Elevator elevator, ClawWrist wrist, Claw claw) {
+    private ClawTuah claw;
+    public AutoRoutines(AutoFactory factory,Elevator elevator, ClawWrist wrist, ClawTuah claw) {
         m_factory = factory;
         this.elevator = elevator;
         this.wrist = wrist;
         this.claw = claw;
     }
 
-    public AutoRoutine simplePathAuto() {
-        final AutoRoutine routine = m_factory.newRoutine("SimplePath Auto");
-        final AutoTrajectory preload = routine.trajectory("PreloadMiddleG");
-
-        routine.active().onTrue(
-            Commands.sequence(
-
-                preload.resetOdometry(),
-                preload.cmd()
-            )
-        );
-
-        preload.done().onTrue(
-            Commands.sequence(
-                new WaitCommand(1)
-            )
-            );
-
-        
-
-
-        return routine;
-    }
-
+   
     public AutoRoutine ThreeCoralTop(){
 
         final AutoRoutine routine = m_factory.newRoutine("TopAuto");
-        final AutoTrajectory preload = routine.trajectory("PreloadTopJ");
+        final AutoTrajectory preload = routine.trajectory("TopMiddleStart");
         final AutoTrajectory getFromstation = routine.trajectory("JToTop");
         final AutoTrajectory scoreAtReefL = routine.trajectory("TopToL");
         final AutoTrajectory LToStation = routine.trajectory("LToTop");
@@ -62,95 +40,29 @@ public class AutoRoutines {
             Commands.sequence(
 
                 preload.resetOdometry(),
-                preload.cmd()
-            )
-        );
-        
-        preload.done().onTrue(
-            Commands.sequence(
-                getFromstation.cmd()
-            )
-        );
-
-        getFromstation.done().onTrue(
-            Commands.sequence(
-                scoreAtReefL.cmd()
-            )
-        );
-
-        scoreAtReefL.done().onTrue(
-            Commands.sequence(
-                LToStation.cmd()
-            )
-        );
-
-        LToStation.done().onTrue(
-            Commands.sequence(
-                scoreAtReefK.cmd()
-            )
-        );
-
-        scoreAtReefK.done().onTrue(
-            Commands.sequence(
-                KToStation.cmd()
-            )
-        );
-        
-
-
-        return routine;
-
-    }
-    public AutoRoutine ThreeCoralBottom(){
-        final AutoRoutine routine = m_factory.newRoutine("BottomAuto");
-        //final AutoTrajectory preload = routine.trajectory("PreloadBottomF");
-        //final AutoTrajectory FToBottom = routine.trajectory("FToBottom");
-        //final AutoTrajectory BottomToC = routine.trajectory("BottomToC");
-        //final AutoTrajectory CToBottom = routine.trajectory("CToBottom");
-        //final AutoTrajectory BottomToD = routine.trajectory("BottomToD");
-        //final AutoTrajectory DToBottom = routine.trajectory("DToBottom");
-
-        
-
-
-
-        return routine;
-    }
-
-    public AutoRoutine GroundIntakeTopAuto(){
-        final AutoRoutine routine = m_factory.newRoutine("Ground Intake top auto");
-
-        final AutoTrajectory preload = routine.trajectory("PreloadTopJ");
-        final AutoTrajectory TopCoralPickup = routine.trajectory("TopGroundCoral");
-        final AutoTrajectory TopCoralScore = routine.trajectory("TopGroundCoralPlace");
-        final AutoTrajectory MiddleCoral = routine.trajectory("MiddleGroundCoral");
-
-        routine.active().onTrue(
-            Commands.sequence(
-
-                preload.resetOdometry(),
                 Commands.parallel(
                 preload.cmd(),
-                elevator.goToPositionCommand(RobotState.L3_PREP.getElevatorPose()),
-                wrist.goToPoseCommand(RobotState.L3_PREP.getClawWristPose())
+                Commands.sequence(
+                    new WaitCommand(0.7),
+                    elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose()),
+                    wrist.goToPoseCommand(RobotState.L4_PREP.getClawWristPose())
+                )
                 )
             )
         );
 
         preload.done().onTrue(
             Commands.sequence(
-                claw.setStateCommand(ClawStates.Intaking),
-                new WaitCommand(0.5),
                 claw.setStateCommand(ClawStates.Outtake),
-                new WaitCommand(0.8),
+                new WaitCommand(0.4),
                 wrist.goToPoseCommand(RobotState.STOW.getClawWristPose()),
                 new WaitCommand(0.5),
                 elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
-                new WaitCommand(2),
+                new WaitCommand(1),
                 new ParallelCommandGroup(
-                    TopCoralPickup.cmd(),
-                    elevator.goToPositionCommand(0),
-                    wrist.goToPoseCommand(RobotState.GROUND_INTAKE_CORAL.getClawWristPose()),
+                    getFromstation.cmd(),
+                    elevator.goToPositionCommand(RobotState.HUMAN_PLAYER_INTAKE.getElevatorPose()),
+                    wrist.goToPoseCommand(RobotState.HUMAN_PLAYER_INTAKE.getClawWristPose()),
                     claw.setStateCommand(ClawStates.Intaking)
                 )
                 
@@ -158,27 +70,98 @@ public class AutoRoutines {
 
             )
             );
-    
-        TopCoralPickup.done().onTrue(
+ 
+        getFromstation.done().onTrue(
             Commands.sequence(
-                elevator.goToPositionCommand(RobotState.L2_PREP.getElevatorPose()),
-                new WaitCommand(2),
+                new WaitUntilCommand(() -> claw.getLimitSwitchBroken()),
+                elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+                wrist.goToPoseCommand(RobotState.STOW.getClawWristPose()),
                 new ParallelCommandGroup(
-                    TopCoralScore.cmd(),
-                    elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose())
+                    scoreAtReefL.cmd(),
+                    Commands.sequence(
+                        new WaitCommand(0.55),
+                        elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose()),
+                        wrist.goToPoseCommand(RobotState.L4_PREP.getClawWristPose())
+                    )
                 )
+               
 
-                
-                
             )
         );
-
-        /*TopCoralScore.done().onTrue(
+         
+        scoreAtReefL.done().onTrue(
             Commands.sequence(
-                MiddleCoral.cmd()
+                claw.setStateCommand(ClawStates.Outtake),
+                new WaitCommand(0.5),
+                Commands.parallel(
+                LToStation.cmd(),
+                Commands.sequence(
+                    new WaitCommand(0.2),
+                    elevator.goToPositionCommand(RobotState.HUMAN_PLAYER_INTAKE.getElevatorPose()),
+                    wrist.goToPoseCommand(RobotState.HUMAN_PLAYER_INTAKE.getClawWristPose()),
+                    claw.setStateCommand(ClawStates.Intaking)
+                )
+                )
+                
             )
         );
-        */
+        
+        LToStation.done().onTrue(
+            Commands.sequence(
+                new WaitUntilCommand(() -> claw.getLimitSwitchBroken()),
+                elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+                wrist.goToPoseCommand(RobotState.STOW.getClawWristPose()),
+                new ParallelCommandGroup(
+                    scoreAtReefK.cmd(),
+                    Commands.sequence(
+                        new WaitCommand(0.55),
+                        elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose()),
+                        wrist.goToPoseCommand(RobotState.L4_PREP.getClawWristPose())
+                    )
+                )
+            )
+        );
+
+        scoreAtReefK.done().onTrue(
+            Commands.sequence(
+                claw.setStateCommand(ClawStates.Outtake)
+            )
+        );
+        
+
+
+        return routine;
+
+    }
+
+    
+    public AutoRoutine middleAuto(){
+        final AutoRoutine routine = m_factory.newRoutine("Middle Auto");
+        final AutoTrajectory goToReef = routine.trajectory("PreloadMiddleG");
+
+        routine.active().onTrue(
+            Commands.sequence(
+
+                goToReef.resetOdometry(),
+                Commands.parallel(
+                goToReef.cmd(),
+                elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose()),
+                wrist.goToPoseCommand(RobotState.L4_PREP.getClawWristPose())
+                )
+            )
+        );
+
+        goToReef.done().onTrue(
+            Commands.sequence(
+             claw.setStateCommand(ClawStates.Outtake),
+             new WaitCommand(1),
+             wrist.goToPoseCommand(RobotState.L4_PREP.getClawWristPose()),
+             new WaitCommand(1),
+             elevator.goToPositionCommand(RobotState.L2_PREP.getElevatorPose())
+            )
+        );
+
+
 
         return routine;
     }

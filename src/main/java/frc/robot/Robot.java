@@ -4,6 +4,11 @@
 
 package frc.robot;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -24,6 +29,7 @@ public class Robot extends TimedRobot {
 
   public Robot() {
     m_robotContainer = new RobotContainer();
+    CameraServer.startAutomaticCapture();
     
   }
 
@@ -51,8 +57,34 @@ public class Robot extends TimedRobot {
     this.m_robotContainer.claw.periodic();
     this.m_robotContainer.wrist.periodic();
     
-    //if (RightTagCam.isReal()){
-    //  EstimatedRobotPose RightPose = RightTagCam.getEstimatedGlobalPose().get();
+    var driveState = m_robotContainer.drivetrain.getState();
+    double headingDeg = driveState.Pose.getRotation().getDegrees();
+    double omegaRps = Units.radiansToRotations(driveState.Speeds.omegaRadiansPerSecond);
+    if(this.isDisabled()){
+      LimelightHelpers.SetIMUMode("limelight-four",1);
+      LimelightHelpers.SetRobotOrientation("limelight-four", headingDeg, 0, 0, 0, 0, 0);
+    }else{
+      LimelightHelpers.SetIMUMode("limelight-four",2);
+    }
+    LimelightHelpers.SetRobotOrientation("limelight-three", headingDeg,0,0,0,0,0);
+    var llMeasurement = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-four");
+    
+    var ll3Measurement = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-three");
+   
+    if (llMeasurement != null && llMeasurement.tagCount > 0 && Math.abs(omegaRps) < 1) {
+     m_robotContainer.drivetrain.addVisionMeasurement(llMeasurement.pose, llMeasurement.timestampSeconds,VecBuilder.fill(1.1,1.1,9999999));
+    }
+
+    if (ll3Measurement != null && ll3Measurement.tagCount > 0 && Math.abs(omegaRps) < 1) {
+      m_robotContainer.drivetrain.addVisionMeasurement(ll3Measurement.pose, ll3Measurement.timestampSeconds,VecBuilder.fill(1.1,1.1,9999999));
+    }
+    if(m_robotContainer.claw.getLimitSwitchBroken()){
+      m_robotContainer.led.setLedMode(m_robotContainer.led.intoke);
+    }else{
+      m_robotContainer.led.setLedMode(m_robotContainer.led.passive);
+    }
+    //\if (RightTagCam.isReal()){
+    //  EstimatedRobotPose RightPose = RhtTagCam.getEstimatedGlobalPose().get();
    ////   if(RightPose != null){
    //     m_robotContainer.drivetrain.addVisionMeasurement(RightPose.estimatedPose.toPose2d(), RightPose.timestampSeconds);
      // }
@@ -68,7 +100,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Voltage Given To ELevator", m_robotContainer.operator.getLeftY() * 12);
     SmartDashboard.putNumber("Elevator Pose", m_robotContainer.elevator.getPosition());
     SmartDashboard.putNumber("Wrist pose",m_robotContainer.wrist.getPose());
-    //SmartDashboard.putBoolean("Has piece", m_robotContainer.claw.getLimitSwitchBroken());
+    SmartDashboard.putBoolean("Has piece", m_robotContainer.claw.getLimitSwitchBroken());
    // if(m_robotContainer.operator.circle().getAsBoolean()){
     //  SmartDashboard.putNumber("kv", m_robotContainer.elevator.kvTest() / 10);
    // }else{
@@ -87,7 +119,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledPeriodic() {
-
+    LimelightHelpers.SetIMUMode("limelight-four",1);
+    LimelightHelpers.SetRobotOrientation("limelight-four", m_robotContainer.drivetrain.getState().Pose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
   }
 
   @Override
@@ -114,8 +147,8 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.cancel();
     }
 
-      this.m_robotContainer.elevator.goToPosition(1);
-      this.m_robotContainer.wrist.changeTargetPose(0);
+      this.m_robotContainer.elevator.goToPosition(RobotState.STOW.getElevatorPose());
+      this.m_robotContainer.wrist.changeTargetPose(RobotState.STOW.getElevatorPose());
   }
 
   @Override

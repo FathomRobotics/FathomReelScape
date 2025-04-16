@@ -2,23 +2,23 @@ package frc.robot;
 
 public enum RobotState {
     HUMAN_PLAYER_INTAKE_PREP(0,0),
-    L1_PREP(-91,1),
-    L2_PREP(20,7.1),
-    L3_PREP(15,10.7), // was 19
-    L4_PREP(20,14),
+    L1_PREP(-91,2),
+    L2_PREP(-15,6), //was -15
+    L3_PREP(-15,9.4), // was -15
+    L4_PREP(-5,15),
     CORAL_ELEVATOR_AVOIDANCE(0,0),
     PREPED(0,0),
     SCORE_STATION_CORAL(0,0),
-    SCORE_GROUND_CORAL(0,0),
+    SCORE_GROUND_CORAL(-95,14.9),
     SHOOT_CORAL(0,0),
-    GROUND_INTAKE_ALGAE(-17,0),
+    GROUND_INTAKE_ALGAE(-30,0),
     GROUND_INTAKE_CORAL(-6,0),
-    L2_CLEAN_ALGAE(0,0),
-    L3_CLEAN_ALGAE(0,0),
-    SCORE_BARGE(0,0),
+    L2_CLEAN_ALGAE(-30,6),
+    L3_CLEAN_ALGAE(-30,9.4),
+    SCORE_BARGE(-110,15.8),
     SCORE_PROCCESSOR(0,0),
-    HUMAN_PLAYER_INTAKE(-84,4.4),
-    STOW(-132,2);
+    HUMAN_PLAYER_INTAKE(-89,4.2),
+    STOW(-120,2);
 
 
     private double ElevatorPose;
