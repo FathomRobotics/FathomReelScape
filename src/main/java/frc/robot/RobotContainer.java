@@ -112,6 +112,7 @@ public class RobotContainer {
         autoChooser.addRoutine("TopAuto", autoRoutines::ThreeCoralTop);
         autoChooser.addRoutine("Single Middle Auto", autoRoutines::middleAuto);
         autoChooser.addRoutine("Middle Alagae", autoRoutines::middleAlgae);
+        autoChooser.addRoutine("Middle Algae x2", autoRoutines::middleAlgaex2);
 
 
 

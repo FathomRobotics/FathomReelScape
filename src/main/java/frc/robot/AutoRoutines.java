@@ -3,6 +3,7 @@ package frc.robot;
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -237,6 +238,135 @@ public class AutoRoutines {
              BackFromBarge.cmd()
             )
         );
+
+        return routine;
+    }
+
+    public AutoRoutine middleAlgaex2(){
+        final AutoRoutine routine = m_factory.newRoutine("Middle Algae");
+        final AutoTrajectory goToReef = routine.trajectory("PreloadMiddleG");
+        final AutoTrajectory BackFromReef = routine.trajectory("BackupFromMiddlePreload");
+        final AutoTrajectory GoToAlgae = routine.trajectory("ForwardToMiddleAlgae");
+        final AutoTrajectory TakeAlgae = routine.trajectory("TakeAlgae");
+        final AutoTrajectory GoToBarge = routine.trajectory("ThrowAlgae");
+        final AutoTrajectory BackFromBarge = routine.trajectory("LeaveThrow");
+        final AutoTrajectory BackwardFromSecondAlgae = routine.trajectory("BackwardFromSecondAlgae");
+        final AutoTrajectory GrabSecondAlgae = routine.trajectory("GrabSecondAlgae");
+        final AutoTrajectory BackUpSecondAlgae = routine.trajectory("BackUpSecondAlgae");
+        final AutoTrajectory ScoreSecondAlgae = routine.trajectory("ScoreSecondAlgae");
+        final AutoTrajectory BackFromBargeTwo = routine.trajectory("BackFromBargeTwo");
+
+        routine.active().onTrue(
+            Commands.sequence(
+
+                goToReef.resetOdometry(),
+                Commands.parallel(
+                goToReef.cmd(),
+                elevator.goToPositionCommand(RobotState.L4_PREP.getElevatorPose()),
+                wrist.goToPoseCommand(RobotState.L4_PREP.getClawWristPose())
+                )
+            )
+        );
+
+        goToReef.done().onTrue(
+            Commands.sequence(
+            
+            //  new WaitCommand(0.5),
+             claw.setStateCommand(ClawStates.Outtake),
+            //  new WaitCommand(1),
+             BackFromReef.cmd()                                                                                  
+            )
+        );
+
+        BackFromReef.done().onTrue(
+            Commands.sequence(
+             wrist.goToPoseCommand(RobotState.L2_CLEAN_ALGAE.getClawWristPose()),
+             elevator.goToPositionCommand(RobotState.L2_CLEAN_ALGAE.getElevatorPose()),
+            //  new WaitCommand(1),
+            claw.setStateCommand(ClawStates.IntakeAlgae),
+             GoToAlgae.cmd()
+             
+            )
+        );
+
+        GoToAlgae.done().onTrue(
+            Commands.sequence(
+             claw.setStateCommand(ClawStates.IntakeAlgae),
+             TakeAlgae.cmd()
+            )
+        );
+
+        TakeAlgae.done().onTrue(
+            Commands.sequence(
+             claw.setStateCommand(ClawStates.IntakeAlgae),
+             GoToBarge.cmd()
+            )
+        );
+
+        GoToBarge.done().onTrue(
+            Commands.sequence(
+             claw.setStateCommand(ClawStates.IntakeAlgae),
+             wrist.goToPoseCommand(RobotState.SCORE_BARGE.getClawWristPose()),
+             new WaitCommand(0.3),
+             elevator.goToPositionCommand(RobotState.SCORE_BARGE.getElevatorPose()),
+             new WaitCommand(0.3),
+             claw.setStateCommand(ClawStates.Outtake),
+             new WaitCommand(0.3),
+             wrist.goToPoseCommand(RobotState.STOW.getClawWristPose()),
+             new WaitCommand(0.3),
+             elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+
+             BackFromBarge.cmd()
+            )
+        );
+
+        BackFromBarge.done().onTrue(
+          Commands.sequence(
+            claw.setStateCommand(ClawStates.IntakeAlgae),
+
+            BackwardFromSecondAlgae.cmd()
+          )  
+        );
+
+        BackwardFromSecondAlgae.done().onTrue(
+            Commands.sequence(
+                elevator.goToPositionCommand(RobotState.L3_CLEAN_ALGAE.getElevatorPose()),
+
+                GrabSecondAlgae.cmd()
+            )
+        );
+
+        GrabSecondAlgae.done().onTrue(
+            Commands.sequence(
+                BackUpSecondAlgae.cmd()
+            )
+        );
+
+        BackUpSecondAlgae.done().onTrue(
+            Commands.sequence(
+                elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()),
+
+                ScoreSecondAlgae.cmd()
+            )
+        );
+
+        ScoreSecondAlgae.done().onTrue(
+          Commands.sequence(
+            claw.setStateCommand(ClawStates.IntakeAlgae),
+             wrist.goToPoseCommand(RobotState.SCORE_BARGE.getClawWristPose()),
+             new WaitCommand(0.3),
+             elevator.goToPositionCommand(RobotState.SCORE_BARGE.getElevatorPose()),
+             new WaitCommand(0.3),
+             claw.setStateCommand(ClawStates.Outtake),
+             new WaitCommand(0.3),
+             wrist.goToPoseCommand(RobotState.STOW.getClawWristPose()),
+             new WaitCommand(0.3),
+            //  elevator.goToPositionCommand(RobotState.STOW.getElevatorPose()), 
+
+             BackFromBargeTwo.cmd()
+          )  
+        );
+
 
         return routine;
     }
