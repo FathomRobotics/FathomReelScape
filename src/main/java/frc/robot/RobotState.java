@@ -3,8 +3,8 @@ package frc.robot;
 public enum RobotState {
     HUMAN_PLAYER_INTAKE_PREP(0,0),
     L1_PREP(-91,2),
-    L2_PREP(-15,6), //was -15
-    L3_PREP(-15,9.4), // was -15
+    L2_PREP(-20,6), // (-15, 6)
+    L3_PREP(-20,9.3), // (-15, 9.4)
     L4_PREP(-5,15),
     CORAL_ELEVATOR_AVOIDANCE(0,0),
     PREPED(0,0),
@@ -17,8 +17,8 @@ public enum RobotState {
     L3_CLEAN_ALGAE(-30,9.4),
     SCORE_BARGE(-110,15.8),
     SCORE_PROCCESSOR(0,0),
-    HUMAN_PLAYER_INTAKE(-89,4.2),
-    STOW(-120,2);
+    HUMAN_PLAYER_INTAKE(-110,4.5), // (-89, 4.5)
+    STOW(-130,2); // (-120, 2)
 
 
     private double ElevatorPose;
